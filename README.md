@@ -4,6 +4,15 @@ EasyWrite, Microsoft Word muadili, **yüklenebilir (PWA) ve çevrimdışı çal�
 Saf HTML, CSS ve JavaScript ile yazılmıştır; hiçbir bağımlılığı ve sunucu tarafı yoktur.
 Belgeler tarayıcının IndexedDB deposunda, yani kullanıcının kendi cihazında saklanır.
 
+## Çalıştırma
+
+PWA özellikleri (çevrimdışı çalışma, yükleme) için uygulamanın HTTP(S) üzerinden sunulması gerekir:
+
+```bash
+cd easywrite
+python3 -m http.server 8000
+# http://localhost:8000 adresini açın
+```
 
 **Yayınlama:** `main` dalına gönderilen her değişiklik `.github/workflows/pages.yml` ile GitHub Pages'e
 yayınlanır (depo ayarlarında *Pages → Source: GitHub Actions* seçili olmalı). Yayınlanan adresi telefon ya da
@@ -22,6 +31,12 @@ bilgisayarda açıp **Uygulamayı yükle / Ana ekrana ekle** ile kurabilirsiniz.
 - Yazarken otomatik kayıt (IndexedDB), birden çok belge
 - Sürüm geçmişi: Ctrl+S ve 5 dakikada bir otomatik sürüm, önizleme ve geri yükleme
 - Kalıcı depolama izni istenir (tarayıcının veriyi silmesini önlemek için)
+
+**PWA**
+- Uygulama olarak yükleme (Android, masaüstü Chrome/Edge, iOS "Ana Ekrana Ekle")
+- Service worker ile tam çevrimdışı çalışma, yeni sürüm bildirimi
+- `.ewrite`, `.docx`, `.md`, `.txt` dosyalarını işletim sisteminden açma (file handlers)
+- Uygulama kısayolları: "Yeni boş belge", "Yeni mektup"
 
 **Düzenleme**
 - Yazı tipi/boyutu, kalın/italik/altı çizili/üstü çizili, alt/üst simge, renk, vurgu, biçim boyacısı
