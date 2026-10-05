@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>EasyWrite</title>
+  <meta name="description" content="EasyWrite — çevrimdışı çalışan, yüklenebilir kelime işlemci">
+  <meta name="theme-color" content="#2b579a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="EasyWrite">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ================= ANA EKRAN ================= -->
+  <div id="homeView" class="view home" hidden>
+    <header class="home-top">
+      <div class="brand">
+        <img class="logo-img" src="icons/icon.svg" alt="" width="30" height="30">
+        <span class="brand-name">EasyWrite</span>
+      </div>
+      <div class="search">
+        <span aria-hidden="true">🔍</span>
+        <input id="homeSearch" type="search" placeholder="Belgelerde ara…" aria-label="Belgelerde ara">
+      </div>
+      <div class="home-top-actions">
+        <span class="net-badge" data-net hidden>Çevrimdışı</span>
+        <button class="pill install-btn" data-action="install" title="Uygulamayı yükle" hidden>⬇<span class="install-label"> Uygulamayı yükle</span></button>
+        <button class="icon-btn" data-action="toggleTheme" title="Koyu / açık tema">◐</button>
+      </div>
+    </header>
+
+    <div class="home-body">
+      <nav class="home-nav" aria-label="Belge görünümleri">
+        <button class="hnav active" data-home="recent"><span>🕘</span> Son belgeler</button>
+        <button class="hnav" data-home="starred"><span>★</span> Yıldızlı</button>
+        <button class="hnav" data-home="trash"><span>🗑</span> Çöp kutusu</button>
+        <div class="hnav-sep"></div>
+        <button class="hnav" data-action="importDoc"><span>📂</span> Aç / içe aktar</button>
+        <div class="storage-info" id="storageInfo"></div>
+      </nav>
+
+      <main class="home-main" id="homeMain">
+        <section class="new-section" id="newSection">
+          <h2>Yeni belge oluştur</h2>
+          <div class="template-row" id="templateRow"></div>
+        </section>
+
+        <section class="docs-section">
+          <div class="docs-head">
+            <h2 id="docsTitle">Son belgeler</h2>
+            <div class="docs-tools">
+              <button class="pill" id="emptyTrash" data-action="emptyTrash" hidden>Çöp kutusunu boşalt</button>
+              <select id="homeSort" aria-label="Sırala">
+                <option value="updated">Son değiştirilen</option>
+                <option value="created">Oluşturma tarihi</option>
+                <option value="title">Ada göre</option>
+                <option value="words">Sözcük sayısı</option>
+              </select>
+              <div class="seg" role="group" aria-label="Görünüm">
+                <button data-layout="grid" class="on" title="Izgara">▦</button>
+                <button data-layout="list" title="Liste">☰</button>
+              </div>
+            </div>
+          </div>
+          <div id="docGrid" class="doc-grid"></div>
+          <div id="emptyState" class="empty-state" hidden></div>
+        </section>
+      </main>
+    </div>
+    <div class="drop-hint" id="dropHint" hidden>Belgeyi açmak için bırakın</div>
+  </div>
+
+  <!-- ================= EDİTÖR ================= -->
+  <div id="editorView" class="view editor-view" hidden>
+    <header class="titlebar">
+      <button class="icon-btn home-btn" data-action="goHome" title="Ana ekran (belgelerim)">⌂</button>
+      <div class="brand">
+        <img class="logo-img small" src="icons/icon.svg" alt="" width="22" height="22">
+      </div>
+      <input id="docTitle" class="doc-title" value="Adsız belge" aria-label="Belge adı" spellcheck="false">
+      <span id="saveState" class="save-state">Kaydedildi</span>
+      <div class="titlebar-actions">
+        <span class="net-badge" data-net hidden>Çevrimdışı</span>
+        <button class="icon-btn" data-action="history" title="Sürüm geçmişi">🕘</button>
+        <button class="icon-btn" data-action="share" title="Paylaş">⤴</button>
+        <button class="icon-btn" data-action="toggleTheme" title="Koyu / açık tema">◐</button>
+      </div>
+    </header>
+
+    <nav class="ribbon-tabs" role="tablist">
+      <button class="rtab" data-tab="file">Dosya</button>
+      <button class="rtab active" data-tab="home">Giriş</button>
+      <button class="rtab" data-tab="insert">Ekle</button>
+      <button class="rtab" data-tab="layout">Düzen</button>
+      <button class="rtab" data-tab="review">Gözden Geçir</button>
+      <button class="rtab" data-tab="view">Görünüm</button>
+    </nav>
+
+    <section class="ribbon">
+      <!-- DOSYA -->
+      <div class="rpanel" data-panel="file">
+        <div class="group">
+          <button class="tb wide" data-action="goHome">⌂ Ana ekran</button>
+          <button class="tb wide" data-action="newDoc" title="Ctrl+Alt+N">🗋 Yeni</button>
+          <button class="tb wide" data-action="importDoc" title="Ctrl+O">📂 Aç</button>
+          <button class="tb wide" data-action="saveDoc" title="Ctrl+S">💾 Kaydet</button>
+          <button class="tb wide" data-action="duplicateDoc">⧉ Kopya oluştur</button>
+          <button class="tb wide" data-action="history">🕘 Sürüm geçmişi</button>
+          <span class="glabel">Belge</span>
+        </div>
+        <div class="group">
+          <button class="tb wide" data-action="exportDocx" title="Microsoft Word">W Word (.docx)</button>
+          <button class="tb wide" data-action="exportEwrite">.ewrite</button>
+          <button class="tb wide" data-action="print" title="Ctrl+P">🖶 PDF / Yazdır</button>
+          <button class="tb wide" data-action="exportHtml">HTML</button>
+          <button class="tb wide" data-action="exportMd">Markdown</button>
+          <button class="tb wide" data-action="exportTxt">TXT</button>
+          <button class="tb wide" data-action="share">⤴ Paylaş</button>
+          <span class="glabel">Dışa aktar</span>
+        </div>
+      </div>
+
+      <!-- GİRİŞ -->
+      <div class="rpanel active" data-panel="home">
+        <div class="group">
+          <button class="tb" data-action="undo" title="Geri al (Ctrl+Z)">↶</button>
+          <button class="tb" data-action="redo" title="Yinele (Ctrl+Y)">↷</button>
+          <button class="tb" data-action="formatPainter" title="Biçim boyacısı">🖌</button>
+          <span class="glabel">Geçmiş</span>
+        </div>
+        <div class="group">
+          <div class="row">
+            <select id="fontName" title="Yazı tipi">
+              <option>Calibri</option>
+              <option>Arial</option>
+              <option>Times New Roman</option>
+              <option>Georgia</option>
+              <option>Verdana</option>
+              <option>Tahoma</option>
+              <option>Trebuchet MS</option>
+              <option>Garamond</option>
+              <option>Courier New</option>
+              <option>Comic Sans MS</option>
+            </select>
+            <select id="fontSize" title="Yazı boyutu">
+              <option>8</option><option>9</option><option>10</option><option selected>11</option>
+              <option>12</option><option>14</option><option>16</option><option>18</option>
+              <option>20</option><option>24</option><option>28</option><option>36</option>
+              <option>48</option><option>72</option>
+            </select>
+            <button class="tb" data-action="growFont" title="Yazıyı büyüt (Ctrl+])">A⁺</button>
+            <button class="tb" data-action="shrinkFont" title="Yazıyı küçült (Ctrl+[)">A⁻</button>
+            <select id="caseSelect" title="Büyük/küçük harf">
+              <option value="">Aa</option>
+              <option value="upper">BÜYÜK HARF</option>
+              <option value="lower">küçük harf</option>
+              <option value="sentence">Cümle düzeni</option>
+              <option value="title">Her Sözcük Büyük</option>
+            </select>
+          </div>
+          <div class="row">
+            <button class="tb" data-cmd="bold" title="Kalın (Ctrl+B)"><b>K</b></button>
+            <button class="tb" data-cmd="italic" title="İtalik (Ctrl+I)"><i>T</i></button>
+            <button class="tb" data-cmd="underline" title="Altı çizili (Ctrl+U)"><u>A</u></button>
+            <button class="tb" data-cmd="strikeThrough" title="Üstü çizili"><s>abc</s></button>
+            <button class="tb" data-cmd="subscript" title="Alt simge">x₂</button>
+            <button class="tb" data-cmd="superscript" title="Üst simge">x²</button>
+            <label class="tb color" title="Yazı rengi">
+              <span class="color-a">A</span><span class="swatch" id="foreSwatch"></span>
+              <input type="color" id="foreColor" value="#c00000">
+            </label>
+            <label class="tb color" title="Vurgu rengi">
+              <span>🖍</span><span class="swatch" id="hiliteSwatch"></span>
+              <input type="color" id="hiliteColor" value="#ffff00">
+            </label>
+            <button class="tb" data-cmd="removeFormat" title="Biçimlendirmeyi temizle">⌫A</button>
+          </div>
+          <span class="glabel">Yazı tipi</span>
+        </div>
+        <div class="group">
+          <div class="row">
+            <button class="tb" data-cmd="insertUnorderedList" title="Madde işaretleri">• ≡</button>
+            <button class="tb" data-cmd="insertOrderedList" title="Numaralandırma">1. ≡</button>
+            <button class="tb" data-cmd="outdent" title="Girintiyi azalt">⇤</button>
+            <button class="tb" data-cmd="indent" title="Girintiyi artır">⇥</button>
+            <select id="lineHeight" title="Satır aralığı">
+              <option value="1">1,0</option>
+              <option value="1.15" selected>1,15</option>
+              <option value="1.5">1,5</option>
+              <option value="2">2,0</option>
+              <option value="2.5">2,5</option>
+              <option value="3">3,0</option>
+            </select>
+          </div>
+          <div class="row">
+            <button class="tb" data-cmd="justifyLeft" title="Sola hizala (Ctrl+L)">⯇≡</button>
+            <button class="tb" data-cmd="justifyCenter" title="Ortala (Ctrl+E)">≡</button>
+            <button class="tb" data-cmd="justifyRight" title="Sağa hizala (Ctrl+R)">≡⯈</button>
+            <button class="tb" data-cmd="justifyFull" title="İki yana yasla (Ctrl+J)">☰</button>
+          </div>
+          <span class="glabel">Paragraf</span>
+        </div>
+        <div class="group styles">
+          <div class="style-gallery">
+            <button class="style-btn" data-block="p">Normal</button>
+            <button class="style-btn h1" data-block="h1">Başlık 1</button>
+            <button class="style-btn h2" data-block="h2">Başlık 2</button>
+            <button class="style-btn h3" data-block="h3">Başlık 3</button>
+            <button class="style-btn quote" data-block="blockquote">Alıntı</button>
+            <button class="style-btn code" data-block="pre">Kod</button>
+          </div>
+          <span class="glabel">Stiller</span>
+        </div>
+        <div class="group">
+          <button class="tb wide" data-action="find" title="Bul (Ctrl+F)">🔍 Bul</button>
+          <button class="tb wide" data-action="replace" title="Değiştir (Ctrl+H)">⇄ Değiştir</button>
+          <button class="tb wide" data-cmd="selectAll" title="Tümünü seç (Ctrl+A)">⬚ Tümünü seç</button>
+          <span class="glabel">Düzenleme</span>
+        </div>
+      </div>
+
+      <!-- EKLE -->
+      <div class="rpanel" data-panel="insert">
+        <div class="group">
+          <button class="tb wide" data-action="insertTable">▦ Tablo</button>
+          <button class="tb wide" data-action="insertImage">🖼 Resim</button>
+          <button class="tb wide" data-action="insertLink" title="Bağlantı (Ctrl+K)">🔗 Bağlantı</button>
+          <button class="tb wide" data-action="insertToc">☷ İçindekiler</button>
+          <span class="glabel">Nesneler</span>
+        </div>
+        <div class="group">
+          <button class="tb wide" data-action="pageBreak" title="Sayfa sonu (Ctrl+Enter)">⤓ Sayfa sonu</button>
+          <button class="tb wide" data-cmd="insertHorizontalRule">― Yatay çizgi</button>
+          <button class="tb wide" data-action="insertDate">📅 Tarih / saat</button>
+          <button class="tb wide" data-action="specialChars">Ω Simge</button>
+          <span class="glabel">Metin</span>
+        </div>
+        <div class="group" id="tableTools">
+          <button class="tb wide" data-action="rowAbove">Üste satır</button>
+          <button class="tb wide" data-action="rowBelow">Alta satır</button>
+          <button class="tb wide" data-action="colLeft">Sola sütun</button>
+          <button class="tb wide" data-action="colRight">Sağa sütun</button>
+          <button class="tb wide" data-action="delRow">Satırı sil</button>
+          <button class="tb wide" data-action="delCol">Sütunu sil</button>
+          <button class="tb wide" data-action="delTable">Tabloyu sil</button>
+          <span class="glabel">Tablo araçları</span>
+        </div>
+      </div>
+
+      <!-- DÜZEN -->
+      <div class="rpanel" data-panel="layout">
+        <div class="group">
+          <label class="field">Boyut
+            <select id="pageSize">
+              <option value="A4">A4 (210×297 mm)</option>
+              <option value="Letter">Letter (216×279 mm)</option>
+              <option value="A5">A5 (148×210 mm)</option>
+            </select>
+          </label>
+          <label class="field">Yönlendirme
+            <select id="orientation">
+              <option value="portrait">Dikey</option>
+              <option value="landscape">Yatay</option>
+            </select>
+          </label>
+          <span class="glabel">Sayfa</span>
+        </div>
+        <div class="group">
+          <label class="field">Kenar boşlukları
+            <select id="margins">
+              <option value="25.4">Normal (2,54 cm)</option>
+              <option value="12.7">Dar (1,27 cm)</option>
+              <option value="19.1">Orta (1,91 cm)</option>
+              <option value="50.8">Geniş (5,08 cm)</option>
+            </select>
+          </label>
+          <label class="field">Sütunlar
+            <select id="columns">
+              <option value="1">Bir</option>
+              <option value="2">İki</option>
+              <option value="3">Üç</option>
+            </select>
+          </label>
+          <span class="glabel">Kenarlar</span>
+        </div>
+        <div class="group">
+          <label class="field">Üst bilgi
+            <input id="headerText" placeholder="Üst bilgi metni">
+          </label>
+          <label class="field">Alt bilgi
+            <input id="footerText" placeholder="Alt bilgi metni">
+          </label>
+          <label class="check"><input type="checkbox" id="pageNumbers" checked> Sayfa numaraları</label>
+          <span class="glabel">Üst / alt bilgi</span>
+        </div>
+      </div>
+
+      <!-- GÖZDEN GEÇİR -->
+      <div class="rpanel" data-panel="review">
+        <div class="group">
+          <button class="tb wide" data-action="wordCount">#️ Sözcük sayımı</button>
+          <label class="check"><input type="checkbox" id="spellcheck" checked> Yazım denetimi</label>
+          <span class="glabel">Denetim</span>
+        </div>
+        <div class="group">
+          <button class="tb wide" data-action="readAloud" id="readAloudBtn">🔊 Sesli oku</button>
+          <button class="tb wide" data-action="dictate" id="dictateBtn">🎤 Dikte</button>
+          <span class="glabel">Konuşma</span>
+        </div>
+        <div class="group">
+          <label class="field">Sözcük hedefi
+            <input id="wordGoal" type="number" min="0" step="50" placeholder="ör. 1000">
+          </label>
+          <span class="glabel">Hedef</span>
+        </div>
+      </div>
+
+      <!-- GÖRÜNÜM -->
+      <div class="rpanel" data-panel="view">
+        <div class="group">
+          <button class="tb wide" data-action="zoomOut">－</button>
+          <button class="tb wide" data-action="zoomReset" id="zoomLabel">100%</button>
+          <button class="tb wide" data-action="zoomIn">＋</button>
+          <button class="tb wide" data-action="fitWidth">↔ Sayfa genişliği</button>
+          <span class="glabel">Yakınlaştır</span>
+        </div>
+        <div class="group">
+          <label class="check"><input type="checkbox" id="showNav"> Gezinti bölmesi</label>
+          <label class="check"><input type="checkbox" id="showRuler" checked> Cetvel</label>
+          <label class="check"><input type="checkbox" id="focusMode"> Odak modu</label>
+          <span class="glabel">Göster</span>
+        </div>
+        <div class="group">
+          <button class="tb wide" data-action="fullscreen">⛶ Tam ekran</button>
+          <button class="tb wide" data-action="toggleTheme">◐ Tema</button>
+          <button class="tb wide" data-action="shortcuts">⌨ Kısayollar</button>
+          <span class="glabel">Uygulama</span>
+        </div>
+      </div>
+    </section>
+
+    <div id="ruler" class="ruler"><div class="ruler-inner" id="rulerInner"></div></div>
+
+    <div class="work-row">
+      <aside id="navPane" class="nav-pane" hidden>
+        <div class="nav-head">Gezinti <button class="icon-btn small" data-action="closeNav" title="Kapat">✕</button></div>
+        <div id="navList" class="nav-list"></div>
+      </aside>
+      <main class="workspace" id="workspace">
+        <div class="page-wrap" id="pageWrap">
+          <div class="page" id="page">
+            <div class="page-header" id="pageHeader"></div>
+            <div id="editor" class="editor" contenteditable="true" spellcheck="true" lang="tr"></div>
+            <div class="page-footer" id="pageFooter"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <footer class="statusbar">
+      <span id="statPages">Sayfa 1 / 1</span>
+      <button class="stat-btn" data-action="wordCount" id="statWords">0 sözcük</button>
+      <span id="statChars">0 karakter</span>
+      <span id="goalBar" class="goal" hidden><span class="goal-fill" id="goalFill"></span></span>
+      <span class="grow"></span>
+      <span class="dictating" id="dictating" hidden>● Dikte ediliyor</span>
+      <span>Türkçe</span>
+      <input type="range" id="zoomSlider" min="50" max="200" step="10" value="100" aria-label="Yakınlaştırma">
+      <span id="zoomStat">100%</span>
+    </footer>
+
+    <!-- Bul / değiştir -->
+    <div id="findBar" class="find-bar" hidden>
+      <input id="findInput" placeholder="Bul…">
+      <span id="findCount" class="find-count"></span>
+      <button data-action="findPrev" title="Önceki (Shift+Enter)">▲</button>
+      <button data-action="findNext" title="Sonraki (Enter)">▼</button>
+      <label class="check"><input type="checkbox" id="findCase"> Aa</label>
+      <div class="replace-row" id="replaceRow">
+        <input id="replaceInput" placeholder="Şununla değiştir…">
+        <button data-action="replaceOne">Değiştir</button>
+        <button data-action="replaceAll">Tümü</button>
+      </div>
+      <button data-action="closeFind" title="Kapat (Esc)">✕</button>
+    </div>
+
+    <!-- Resim araç kutusu -->
+    <div id="imgTools" class="float-tools" hidden>
+      <button data-img="25">25%</button>
+      <button data-img="50">50%</button>
+      <button data-img="75">75%</button>
+      <button data-img="100">100%</button>
+      <span class="sep"></span>
+      <button data-img-align="left" title="Sola yasla">⯇</button>
+      <button data-img-align="center" title="Ortala">≡</button>
+      <button data-img-align="right" title="Sağa yasla">⯈</button>
+      <span class="sep"></span>
+      <button data-img="delete" title="Sil">🗑</button>
+    </div>
+  </div>
+
+  <!-- Bağlam menüsü (ana ekran kartları) -->
+  <div id="cardMenu" class="menu" hidden></div>
+
+  <!-- Genel diyalog -->
+  <dialog id="dialog">
+    <form method="dialog" id="dialogForm">
+      <h3 id="dialogTitle"></h3>
+      <div id="dialogBody"></div>
+      <menu>
+        <button value="cancel" formnovalidate id="dialogCancel">İptal</button>
+        <button value="ok" id="dialogOk" class="primary">Tamam</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <input type="file" id="fileInput" accept=".ewrite,.docx,.html,.htm,.txt,.md,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple hidden>
+  <input type="file" id="imageInput" accept="image/*" hidden>
+  <!-- Köşedeki yükleme penceresi -->
+  <div id="installBanner" class="install-banner" role="dialog" aria-label="Uygulamayı yükle" hidden>
+    <img src="icons/icon.svg" alt="" width="46" height="46">
+    <div class="ib-text">
+      <b>EasyWrite'ı yükleyin</b>
+      <span id="ibHint"></span>
+    </div>
+    <div class="ib-actions">
+      <button class="ib-later" data-action="installLater">Şimdi değil</button>
+      <button class="ib-install" id="ibInstall" data-action="install">Yükle</button>
+    </div>
+    <button class="ib-close" data-action="installLater" aria-label="Kapat">✕</button>
+  </div>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <div id="updateBar" class="update-bar" hidden>
+    Yeni bir sürüm hazır. <button data-action="applyUpdate">Yenile</button>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script src="js/templates.js"></script>
+  <script src="js/docx.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/home.js"></script>
+  <script src="js/pwa.js"></script>
+</body>
+</html>
